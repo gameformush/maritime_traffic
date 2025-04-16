@@ -8,7 +8,6 @@ import (
 	"maritime_traffic/pkg/traffic"
 	"net/http"
 
-	"github.com/gorilla/mux"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/spf13/cobra"
 )
@@ -39,18 +38,8 @@ func serve(cmd *cobra.Command, args []string) {
 	})
 
 	shipsH := handlers.NewShipsHandler(t)
-	flushH := handlers.NewFlushHandler()
 
-	r := mux.NewRouter()
-
-	v1 := r.PathPrefix("/api/v1").Subrouter()
-
-	ships := v1.PathPrefix("/ships").Subrouter()
-	ships.HandleFunc("", shipsH.GetShips).Methods("GET")
-	ships.HandleFunc("/{id}", shipsH.GetShip).Methods("GET")
-	ships.HandleFunc("/{id}/position", shipsH.PositionShip).Methods("POST")
-
-	v1.HandleFunc("/flush", flushH.Flush).Methods("POST")
+	r := server.NewAPI(shipsH)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),

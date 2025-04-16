@@ -17,17 +17,18 @@ type (
 		GetShips() ([]traffic.Ship, error)
 		GetShipPositions(id string) ([]traffic.ShipPosition, error)
 		PositionShip(ps traffic.PositionShip) (traffic.PositionResult, error)
+		Flush()
 	}
 	ShipsHandler struct {
 		ships IShips
 	}
 	PositionShipRequest struct {
-		Time int64 `json:"time"`
-		X    int   `json:"x"`
-		Y    int   `json:"y"`
+		Time int `json:"time"`
+		X    int `json:"x"`
+		Y    int `json:"y"`
 	}
 	PositionShipResponse struct {
-		Time   int64          `json:"time"`
+		Time   int            `json:"time"`
 		X      int            `json:"x"`
 		Y      int            `json:"y"`
 		Speed  int            `json:"speed"`
@@ -45,9 +46,15 @@ func NewShipsHandler(ships IShips) *ShipsHandler {
 	}
 }
 
+func (h *ShipsHandler) Flush(w http.ResponseWriter, r *http.Request) {
+	h.ships.Flush()
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func (h *ShipsHandler) GetShips(w http.ResponseWriter, r *http.Request) {
 	ships, err := h.ships.GetShips()
-	if err != nil { // better error handling
+	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -67,7 +74,12 @@ func (h *ShipsHandler) GetShip(w http.ResponseWriter, r *http.Request) {
 
 	positions, err := h.ships.GetShipPositions(shipID)
 	if err != nil { // better error handling
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		switch err {
+		case traffic.ErrNotFound:
+			http.Error(w, err.Error(), http.StatusNotFound)
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
 
@@ -122,9 +134,9 @@ func (p PositionShipRequest) Validate() error {
 		return fmt.Errorf("time can not be empty")
 	}
 
-	if p.Time > time.Now().Unix() {
+	if int64(p.Time) > time.Now().Unix() {
 		return fmt.Errorf("time can not be in the future")
 	}
-	 
+
 	return nil
 }
