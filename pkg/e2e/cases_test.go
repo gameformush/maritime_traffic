@@ -33,7 +33,7 @@ func TestBasicCases(t *testing.T) {
 			},
 			expectedResults: []traffic.PositionResult{
 				{Speed: 0, Status: traffic.Green},
-				{Speed: 2, Status: traffic.Green},
+				{Speed: 1, Status: traffic.Green},
 			},
 		},
 	}

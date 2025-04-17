@@ -25,30 +25,24 @@ type Config struct {
 }
 
 func serve(cmd *cobra.Command, args []string) {
-	t := traffic.NewTraffic()
-
 	var cfg Config
 	if err := envconfig.Process(cmd.Context(), &cfg); err != nil {
 		slog.Error("failed to load config", "error", err)
 		return
 	}
 
-	server.NewServer(server.Config{
-		Port: cfg.Port,
-	})
-
+	t := traffic.NewTraffic()
 	shipsH := handlers.NewShipsHandler(t)
-
-	r := server.NewAPI(shipsH)
 
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
-		Handler: r,
+		Handler: server.NewAPI(shipsH),
 	}
 
 	slog.Info("listening on port", "port", cfg.Port)
 	err := server.ListenAndServe()
 	if err != nil {
-		panic(err) // handle better
+		slog.Error("failed to start server", "error", err)
+		return
 	}
 }

@@ -2,6 +2,7 @@ package traffic
 
 import (
 	"errors"
+	"math"
 	"strconv"
 	"sync"
 )
@@ -34,10 +35,9 @@ type Ship struct {
 }
 
 type PositionShip struct {
-	ID   string
-	Time int
-	X    int
-	Y    int
+	ID    string
+	Time  int
+	Point Point
 }
 
 type PositionResult struct {
@@ -114,21 +114,20 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 	speed := 0
 	if len(t.History[ps.ID]) > 0 {
 		lastPosition := t.History[ps.ID][len(t.History[ps.ID])-1]
-
 		if ps.Time <= lastPosition.Time {
 			return PositionResult{}, ErrTimeInPast
 		}
 
-		dist := (ps.X-lastPosition.Position.X)*(ps.X-lastPosition.Position.X) + (ps.Y-lastPosition.Position.Y)*(ps.Y-lastPosition.Position.Y)
-		speed = int(dist / (ps.Time - lastPosition.Time))
+		speed = int(distance(lastPosition.Position, ps.Point) / (ps.Time - lastPosition.Time))
 	}
 
 	t.History[ps.ID] = append(t.History[ps.ID], ShipPosition{
 		Time:     ps.Time,
 		Speed:    speed,
-		Position: Point{X: ps.X, Y: ps.Y},
+		Position: ps.Point,
 	})
 
+	// TODO main logic for status
 	status := Green
 
 	t.LastStatus[ps.ID] = status
@@ -137,4 +136,8 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 		Speed:  speed,
 		Status: status,
 	}, nil
+}
+
+func distance(p1, p2 Point) int {
+	return int(math.Sqrt(float64((p1.X-p2.X)*(p1.X-p2.X) + (p1.Y-p2.Y)*(p1.Y-p2.Y))))
 }

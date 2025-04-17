@@ -18,15 +18,9 @@ const addr = "http://localhost"
 func TestMain(m *testing.M) {
 	t := traffic.NewTraffic()
 
-	server.NewServer(server.Config{
-		Port: port,
-	})
-
-	r := server.NewAPI(handlers.NewShipsHandler(t))
-
 	server := http.Server{
 		Addr:    fmt.Sprintf(":%d", port),
-		Handler: r,
+		Handler: server.NewAPI(handlers.NewShipsHandler(t)),
 	}
 
 	go func() {

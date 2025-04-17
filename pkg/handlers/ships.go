@@ -110,8 +110,10 @@ func (h *ShipsHandler) PositionShip(w http.ResponseWriter, r *http.Request) {
 	result, err := h.ships.PositionShip(traffic.PositionShip{
 		ID:   shipID,
 		Time: req.Time,
-		X:    req.X,
-		Y:    req.Y,
+		Point: traffic.Point{
+			X: req.X,
+			Y: req.Y,
+		},
 	})
 	if err != nil {
 		switch err {

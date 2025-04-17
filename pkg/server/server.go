@@ -6,10 +6,6 @@ import (
 	"github.com/gorilla/mux"
 )
 
-type Server struct {
-	Config
-}
-
 func NewAPI(shipsH *handlers.ShipsHandler) *mux.Router {
 	r := mux.NewRouter()
 
