@@ -3,3 +3,9 @@ build:
 	
 test:
 	go test -v ./...
+    
+watch:
+	while true; do \
+	$(MAKE) test; \
+	fswatch -1 -e ".*" -i "\\.go$$" .; \
+	done
