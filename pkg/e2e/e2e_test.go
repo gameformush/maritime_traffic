@@ -13,6 +13,7 @@ import (
 )
 
 const port = 7070
+const addr = "http://localhost"
 
 func TestMain(m *testing.M) {
 	t := traffic.NewTraffic()

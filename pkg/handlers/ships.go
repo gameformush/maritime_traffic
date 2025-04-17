@@ -115,6 +115,8 @@ func (h *ShipsHandler) PositionShip(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	
+	fmt.Printf("PositionShip: %v\n", req)
 
 	res := PositionShipResponse{
 		Time:   req.Time,

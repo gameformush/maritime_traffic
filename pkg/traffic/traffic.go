@@ -57,7 +57,8 @@ var (
 
 func NewTraffic() *Traffic {
 	return &Traffic{
-		History: make(map[string][]ShipPosition),
+		History:    make(map[string][]ShipPosition),
+		LastStatus: make(map[string]Status),
 	}
 }
 
@@ -110,9 +111,10 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 	defer t.mu.Unlock()
 
 	speed := 0
-	if len(t.History[ps.ID]) > 1 {
+	if len(t.History[ps.ID]) > 0 {
 		lastPosition := t.History[ps.ID][len(t.History[ps.ID])-1]
 		dist := (ps.X-lastPosition.Position.X)*(ps.X-lastPosition.Position.X) + (ps.Y-lastPosition.Position.Y)*(ps.Y-lastPosition.Position.Y)
+		println("dist", dist, ps.Time, lastPosition.Time)
 		speed = int(dist / (ps.Time - lastPosition.Time))
 	}
 
