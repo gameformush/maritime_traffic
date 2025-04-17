@@ -52,7 +52,8 @@ type Traffic struct {
 }
 
 var (
-	ErrNotFound = errors.New("ship not found")
+	ErrNotFound   = errors.New("ship not found")
+	ErrTimeInPast = errors.New("time should be greater than last position time")
 )
 
 func NewTraffic() *Traffic {
@@ -113,8 +114,12 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 	speed := 0
 	if len(t.History[ps.ID]) > 0 {
 		lastPosition := t.History[ps.ID][len(t.History[ps.ID])-1]
+
+		if ps.Time <= lastPosition.Time {
+			return PositionResult{}, ErrTimeInPast
+		}
+
 		dist := (ps.X-lastPosition.Position.X)*(ps.X-lastPosition.Position.X) + (ps.Y-lastPosition.Position.Y)*(ps.Y-lastPosition.Position.Y)
-		println("dist", dist, ps.Time, lastPosition.Time)
 		speed = int(dist / (ps.Time - lastPosition.Time))
 	}
 

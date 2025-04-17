@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"maritime_traffic/pkg/traffic"
 	"net/http"
 	"time"
@@ -59,10 +60,8 @@ func (h *ShipsHandler) GetShips(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
-
-	json.NewEncoder(w).Encode(ships)
+	sendJSON(w, ships)
 }
 
 func (h *ShipsHandler) GetShip(w http.ResponseWriter, r *http.Request) {
@@ -73,7 +72,7 @@ func (h *ShipsHandler) GetShip(w http.ResponseWriter, r *http.Request) {
 	}
 
 	positions, err := h.ships.GetShipPositions(shipID)
-	if err != nil { // better error handling
+	if err != nil {
 		switch err {
 		case traffic.ErrNotFound:
 			http.Error(w, err.Error(), http.StatusNotFound)
@@ -83,12 +82,11 @@ func (h *ShipsHandler) GetShip(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res := GetShipResponse{
+	w.WriteHeader(http.StatusOK)
+	sendJSON(w, GetShipResponse{
 		ID:        shipID,
 		Positions: positions,
-	}
-
-	json.NewEncoder(w).Encode(res)
+	})
 }
 
 func (h *ShipsHandler) PositionShip(w http.ResponseWriter, r *http.Request) {
@@ -104,6 +102,10 @@ func (h *ShipsHandler) PositionShip(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	if err := req.Validate(); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	result, err := h.ships.PositionShip(traffic.PositionShip{
 		ID:   shipID,
@@ -111,24 +113,25 @@ func (h *ShipsHandler) PositionShip(w http.ResponseWriter, r *http.Request) {
 		X:    req.X,
 		Y:    req.Y,
 	})
-	if err != nil { // better error handling
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err != nil {
+		switch err {
+		case traffic.ErrTimeInPast:
+			http.Error(w, err.Error(), http.StatusBadRequest)
+		default:
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 		return
 	}
-	
-	fmt.Printf("PositionShip: %v\n", req)
 
-	res := PositionShipResponse{
+	w.WriteHeader(http.StatusCreated)
+
+	sendJSON(w, PositionShipResponse{
 		Time:   req.Time,
 		X:      req.X,
 		Y:      req.Y,
 		Speed:  result.Speed,
 		Status: result.Status,
-	}
-
-	w.WriteHeader(http.StatusCreated)
-
-	json.NewEncoder(w).Encode(res) // TODO handle error
+	})
 }
 
 func (p PositionShipRequest) Validate() error {
@@ -136,9 +139,22 @@ func (p PositionShipRequest) Validate() error {
 		return fmt.Errorf("time can not be empty")
 	}
 
+	if p.Time < 0 {
+		return fmt.Errorf("time can not be negative")
+	}
+
 	if int64(p.Time) > time.Now().Unix() {
 		return fmt.Errorf("time can not be in the future")
 	}
 
 	return nil
+}
+
+func sendJSON(w http.ResponseWriter, message any) {
+	w.Header().Set("Content-Type", "application/json")
+
+	err := json.NewEncoder(w).Encode(message)
+	if err != nil {
+		slog.Error("failed to encode response", "error", err)
+	}
 }
