@@ -6,7 +6,6 @@ import (
 	"log/slog"
 	"maritime_traffic/pkg/traffic"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -23,6 +22,13 @@ type (
 	ShipsHandler struct {
 		ships IShips
 	}
+	ShipResponse struct {
+		ID           string   `json:"id"`
+		LastSeen     string   `json:"last_time"`
+		LastStatus   string   `json:"last_status"`
+		LastSpeed    float64  `json:"last_speed"`
+		LastPosition Position `json:"last_position"`
+	}
 	PositionShipRequest struct {
 		Time int `json:"time"`
 		X    int `json:"x"`
@@ -35,9 +41,18 @@ type (
 		Speed  int            `json:"speed"`
 		Status traffic.Status `json:"status"`
 	}
+	Position struct {
+		X int `json:"x"`
+		Y int `json:"y"`
+	}
+	ShipPosition struct {
+		Time     int      `json:"time"`
+		Speed    int      `json:"speed"`
+		Position Position `json:"position"`
+	}
 	GetShipResponse struct {
-		ID        string                 `json:"id"`
-		Positions []traffic.ShipPosition `json:"positions"`
+		ID        string         `json:"id"`
+		Positions []ShipPosition `json:"positions"`
 	}
 )
 
@@ -61,7 +76,22 @@ func (h *ShipsHandler) GetShips(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusOK)
-	sendJSON(w, ships)
+	sendJSON(w, mapShips(ships))
+}
+
+func mapShips(ships []traffic.Ship) []ShipResponse {
+	result := make([]ShipResponse, len(ships))
+	for i, ship := range ships {
+		result[i] = ShipResponse{
+			ID:           ship.ID,
+			LastSeen:     ship.LastSeen,
+			LastStatus:   string(ship.LastStatus),
+			LastSpeed:    ship.LastSpeed,
+			LastPosition: Position{X: int(ship.LastPosition.X), Y: int(ship.LastPosition.Y)},
+		}
+	}
+
+	return result
 }
 
 func (h *ShipsHandler) GetShip(w http.ResponseWriter, r *http.Request) {
@@ -85,13 +115,30 @@ func (h *ShipsHandler) GetShip(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	sendJSON(w, GetShipResponse{
 		ID:        shipID,
-		Positions: positions,
+		Positions: mapPositions(positions),
 	})
+}
+
+func mapPositions(positions []traffic.ShipPosition) []ShipPosition {
+	result := make([]ShipPosition, len(positions))
+	for i, pos := range positions {
+		result[i] = ShipPosition{
+			Time:     pos.Time,
+			Speed:    int(pos.Speed.Magnitude()),
+			Position: Position{X: int(pos.Position.X), Y: int(pos.Position.Y)},
+		}
+	}
+
+	return result
 }
 
 func (h *ShipsHandler) PositionShip(w http.ResponseWriter, r *http.Request) {
 	shipID, ok := mux.Vars(r)[muxIDVar]
 	if !ok {
+		http.Error(w, "ship id must be provided", http.StatusBadRequest)
+		return
+	}
+	if shipID == "" {
 		http.Error(w, "ship id can not be empty", http.StatusBadRequest)
 		return
 	}
@@ -110,15 +157,15 @@ func (h *ShipsHandler) PositionShip(w http.ResponseWriter, r *http.Request) {
 	result, err := h.ships.PositionShip(traffic.PositionShip{
 		ID:   shipID,
 		Time: req.Time,
-		Point: traffic.Point{
-			X: req.X,
-			Y: req.Y,
+		Point: traffic.Vector{
+			X: float64(req.X),
+			Y: float64(req.Y),
 		},
 	})
 	if err != nil {
 		switch err {
-		case traffic.ErrTimeInPast:
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		case traffic.ErrTimeInPast, traffic.ErrTimeInFuture:
+			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
 		default:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
@@ -126,12 +173,11 @@ func (h *ShipsHandler) PositionShip(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-
 	sendJSON(w, PositionShipResponse{
 		Time:   req.Time,
 		X:      req.X,
 		Y:      req.Y,
-		Speed:  result.Speed,
+		Speed:  int(result.Speed),
 		Status: result.Status,
 	})
 }
@@ -143,10 +189,6 @@ func (p PositionShipRequest) Validate() error {
 
 	if p.Time < 0 {
 		return fmt.Errorf("time can not be negative")
-	}
-
-	if int64(p.Time) > time.Now().Unix() {
-		return fmt.Errorf("time can not be in the future")
 	}
 
 	return nil

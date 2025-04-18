@@ -1,0 +1,28 @@
+goos: darwin
+goarch: arm64
+pkg: maritime_traffic/pkg/e2e
+cpu: Apple M2 Pro
+=== RUN   BenchmarkPosition
+BenchmarkPosition
+=== RUN   BenchmarkPosition/ships=1
+BenchmarkPosition/ships=1
+BenchmarkPosition/ships=1-12                 176           6798128 ns/op         1083944 B/op      11329 allocs/op
+=== RUN   BenchmarkPosition/ships=10
+BenchmarkPosition/ships=10
+BenchmarkPosition/ships=10-12                150          10613407 ns/op         1056624 B/op      11318 allocs/op
+=== RUN   BenchmarkPosition/ships=100
+BenchmarkPosition/ships=100
+BenchmarkPosition/ships=100-12               120          11770856 ns/op         1043724 B/op      11319 allocs/op
+=== RUN   BenchmarkPosition/ships=1000
+BenchmarkPosition/ships=1000
+BenchmarkPosition/ships=1000-12              100          13951182 ns/op         1040243 B/op      11357 allocs/op
+=== RUN   BenchmarkPosition/ships=10000
+BenchmarkPosition/ships=10000
+BenchmarkPosition/ships=10000-12             100          21977295 ns/op         1061529 B/op      11428 allocs/op
+=== RUN   BenchmarkPosition/ships=100000
+BenchmarkPosition/ships=100000
+BenchmarkPosition/ships=100000-12             51          31843325 ns/op         1044693 B/op      11448 allocs/op
+=== RUN   BenchmarkPosition/ships=1000000
+BenchmarkPosition/ships=1000000
+BenchmarkPosition/ships=1000000-12            40          43737921 ns/op         1115942 B/op      11508 allocs/op
+PASS

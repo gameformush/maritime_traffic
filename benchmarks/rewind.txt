@@ -1,0 +1,80 @@
+goos: darwin
+goarch: arm64
+pkg: maritime_traffic/pkg/traffic
+cpu: Apple M2 Pro
+=== RUN   BenchmarkRewind
+BenchmarkRewind
+=== RUN   BenchmarkRewind/name=binary/size=10
+BenchmarkRewind/name=binary/size=10
+BenchmarkRewind/name=binary/size=10-12          236605887                4.999 ns/op           0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=binary/size=100
+BenchmarkRewind/name=binary/size=100
+BenchmarkRewind/name=binary/size=100-12         177352263                6.799 ns/op           0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=binary/size=1000
+BenchmarkRewind/name=binary/size=1000
+BenchmarkRewind/name=binary/size=1000-12        141634818                8.346 ns/op           0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=binary/size=10000
+BenchmarkRewind/name=binary/size=10000
+BenchmarkRewind/name=binary/size=10000-12       100000000               10.44 ns/op            0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=binary/size=100000
+BenchmarkRewind/name=binary/size=100000
+BenchmarkRewind/name=binary/size=100000-12      90551515                13.38 ns/op            0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=binary/size=1000000
+BenchmarkRewind/name=binary/size=1000000
+BenchmarkRewind/name=binary/size=1000000-12     76309382                15.80 ns/op            0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=binary/size=10000000
+BenchmarkRewind/name=binary/size=10000000
+BenchmarkRewind/name=binary/size=10000000-12    65031249                18.19 ns/op            0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=binary/size=100000000
+BenchmarkRewind/name=binary/size=100000000
+BenchmarkRewind/name=binary/size=100000000-12   54984180                22.07 ns/op            0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=rewind/size=10
+BenchmarkRewind/name=rewind/size=10
+BenchmarkRewind/name=rewind/size=10-12          127526547                9.305 ns/op           0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=rewind/size=100
+BenchmarkRewind/name=rewind/size=100
+BenchmarkRewind/name=rewind/size=100-12         30283593                40.40 ns/op            0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=rewind/size=1000
+BenchmarkRewind/name=rewind/size=1000
+BenchmarkRewind/name=rewind/size=1000-12         3397772               352.9 ns/op             0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=rewind/size=10000
+BenchmarkRewind/name=rewind/size=10000
+BenchmarkRewind/name=rewind/size=10000-12         314706              3762 ns/op               0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=rewind/size=100000
+BenchmarkRewind/name=rewind/size=100000
+BenchmarkRewind/name=rewind/size=100000-12         27332             37197 ns/op               0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=rewind/size=1000000
+BenchmarkRewind/name=rewind/size=1000000
+BenchmarkRewind/name=rewind/size=1000000-12         2967            404447 ns/op               0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=rewind/size=10000000
+BenchmarkRewind/name=rewind/size=10000000
+BenchmarkRewind/name=rewind/size=10000000-12         291           4202821 ns/op               0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=rewind/size=100000000
+BenchmarkRewind/name=rewind/size=100000000
+BenchmarkRewind/name=rewind/size=100000000-12         14          79816217 ns/op               0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=inline/size=10
+BenchmarkRewind/name=inline/size=10
+BenchmarkRewind/name=inline/size=10-12          248181061                4.844 ns/op           0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=inline/size=100
+BenchmarkRewind/name=inline/size=100
+BenchmarkRewind/name=inline/size=100-12         150942043                7.056 ns/op           0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=inline/size=1000
+BenchmarkRewind/name=inline/size=1000
+BenchmarkRewind/name=inline/size=1000-12        100000000               10.28 ns/op            0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=inline/size=10000
+BenchmarkRewind/name=inline/size=10000
+BenchmarkRewind/name=inline/size=10000-12       90687805                13.37 ns/op            0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=inline/size=100000
+BenchmarkRewind/name=inline/size=100000
+BenchmarkRewind/name=inline/size=100000-12
+64981947                18.30 ns/op            0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=inline/size=1000000
+BenchmarkRewind/name=inline/size=1000000
+BenchmarkRewind/name=inline/size=1000000-12     54238513                22.31 ns/op            0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=inline/size=10000000
+BenchmarkRewind/name=inline/size=10000000
+BenchmarkRewind/name=inline/size=10000000-12    46241066                26.45 ns/op            0 B/op          0 allocs/op
+=== RUN   BenchmarkRewind/name=inline/size=100000000
+BenchmarkRewind/name=inline/size=100000000
+BenchmarkRewind/name=inline/size=100000000-12   36309171                33.78 ns/op            0 B/op          0 allocs/op
+PASS

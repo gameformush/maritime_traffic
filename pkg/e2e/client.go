@@ -71,7 +71,7 @@ func (c *Client) GetShip(id string) (traffic.Ship, error) {
 	return ship, nil
 }
 
-func (c *Client) PositionShip(id string, time int, position traffic.Point) (traffic.PositionResult, error) {
+func (c *Client) PositionShip(id string, time int, position handlers.Position) (traffic.PositionResult, error) {
 	reqBody, err := json.Marshal(handlers.PositionShipRequest{
 		Time: time,
 		X:    position.X,
