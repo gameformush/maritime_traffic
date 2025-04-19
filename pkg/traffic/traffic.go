@@ -51,6 +51,7 @@ type PositionResult struct {
 }
 
 type Traffic struct {
+	// mu use RW mutex because we have many reads and few writes
 	mu         sync.RWMutex
 	History    map[string][]ShipPosition
 	LastStatus map[string]Status
@@ -137,17 +138,7 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 		}
 
 		deltaTime := float64(ps.Time - lastPosition.Time)
-		deltaX := ps.Point.X - lastPosition.Position.X
-		deltaY := ps.Point.Y - lastPosition.Position.Y
-		speed = Vector{
-			X: float64(deltaX) / deltaTime,
-			Y: float64(deltaY) / deltaTime,
-		}
-
-		// truncate speed to maxSpeedPerSecond
-		if speed.Magnitude() > maxSpeedPerSecond {
-			speed = speed.Normalize().ScalarMultiply(maxSpeedPerSecond)
-		}
+		speed = calculateShipSpeed(deltaTime, ps.Point, lastPosition.Position)
 	}
 
 	status := t.evaluateTrafficStatus(ps, speed)
@@ -167,86 +158,164 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 	}, nil
 }
 
+// calculateShipSpeed between two positions in deltatime and truncate to maxSpeedPerSecond
+func calculateShipSpeed(deltaTime float64, newPosition, lastPosition Vector) Vector {
+	deltaX := newPosition.X - lastPosition.X
+	deltaY := newPosition.Y - lastPosition.Y
+	speed := Vector{
+		X: float64(deltaX) / deltaTime,
+		Y: float64(deltaY) / deltaTime,
+	}
+
+	// truncate speed to maxSpeedPerSecond
+	if speed.Magnitude() > maxSpeedPerSecond {
+		speed = speed.Normalize().ScalarMultiply(maxSpeedPerSecond)
+	}
+
+	return speed
+}
+
 // evaluateTrafficStatus goes over all ships
 // find ship states before ps.Time + 60
 // calculate ship position at ps.Time
 // calculate distance between the two ships
-// if distance > 60 * maxSpeed * 2 then skip they are too far
-// otherwise calculate min distance
-// if status red then break, not going to get better
+// each ship can have many positions whithin 60 seconds window
+// we need to find the first ship position that is before ps.Time + 60 or right on it
+// move first ship to ps.Time to make things easier
+// keep ships in time sync
+// calculate distance between the two ships
+// if status red then break, not going to get any better
 // if status yellow then set status yellow
 //
 // edge cases:
-// 0,0 - tower TODO
+// 0,0 - tower
+// ships can jump surpassing max speed - try to use future position to calculate speed,
+// speed may not be correct, but at least trajectory is correct
 //
-// locks RLock on t.Histor
+// locks RLock on t.History
 func (t *Traffic) evaluateTrafficStatus(ps PositionShip, speed Vector) Status {
 	status := Green
 
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
+loop:
 	for shipID, history := range t.History {
 		if shipID == ps.ID {
 			continue // don't collide with itself
 		}
 
-		otherShip := rewindShipBinarySearch(history, ps)
-		if otherShip.Time == 0 {
-			continue // no history for this time
-		}
+		// other ships already aligned into the [ps.Time: ps.Time + 60 window]
+		// with adujusted speed(code is prettier now :) )
+		// move both ships to ts and calculate distance
+		currentPosition := ps.Point
+		currentTime := ps.Time
+		maxPredictionTime := ps.Time + int(predictionTimeSeconds)
+		collisionCandidates := rewindShipBinarySearch(history, ps)
+		for i, otherShip := range collisionCandidates {
+			if otherShip.Time == 0 {
+				continue // no history for this time
+			}
 
-		currentPosition := otherShip.Position
-		if otherShip.Time < ps.Time { // estimate position at ps.Time
-			currentPosition = otherShip.Position.Add(otherShip.Speed.ScalarMultiply(float64(ps.Time - otherShip.Time)))
-		}
-		if currentPosition.Subtract(ps.Point).Magnitude() > maxSpeedPerSecond*predictionTimeSeconds*2+YellowThreshold {
-			continue // no way to be close
-		}
+			// because there are many updates possible within 60 seconds
+			// dist calculation must be done for smaller time windows not just +60
+			nextPredictionTime := maxPredictionTime
+			if i < len(collisionCandidates)-1 {
+				nextPredictionTime = min(collisionCandidates[i+1].Time, maxPredictionTime)
+			}
 
-		minDist := calculateMinDistance(ShipPosition{
-			Position: currentPosition,
-			Speed:    otherShip.Speed,
-		}, ShipPosition{
-			Position: ps.Point,
-			Speed:    speed,
-		}, predictionTimeSeconds)
+			// ships must be at the time for calculate min distance to work
+			currentPosition = currentPosition.Add(speed.ScalarMultiply(float64(otherShip.Time - currentTime)))
+			currentTime = otherShip.Time
 
-		newStatus := statusForDist(minDist)
-		if newStatus == Red {
-			status = newStatus
-			break
-		}
+			minDist := calculateMinDistance(ShipPosition{
+				Position: otherShip.Position,
+				Speed:    otherShip.Speed,
+			}, ShipPosition{
+				Position: currentPosition,
+				Speed:    speed,
+			}, float64(nextPredictionTime-currentTime))
 
-		if status != Yellow {
-			status = newStatus
+			newStatus := statusForDist(minDist)
+			if newStatus == Red {
+				status = newStatus
+				break loop
+			}
+
+			if status != Yellow {
+				status = newStatus
+			}
 		}
 	}
 
 	return status
 }
 
-func rewindShipBinarySearch(history []ShipPosition, ps PositionShip) ShipPosition {
-	idx := sort.Search(len(history), func(i int) bool {
-		return history[i].Time > ps.Time+predictionTimeSeconds
+// find time box starting at ps.Time and ending at ps.Time + 60
+// maybe second search for the end could be linear? - depense on density of updates
+// with small density for next 60 seconds second linear search will be very fast
+// however I don't want to make assumptions about the density of updates
+// so we will use binary search for both
+// on second thought, linear search could have better CPU cache performance - benchmark later
+func rewindShipBinarySearch(history []ShipPosition, ps PositionShip) []ShipPosition {
+	if len(history) == 0 {
+		return nil
+	}
+
+	startIndex := sort.Search(len(history), func(i int) bool {
+		return history[i].Time >= ps.Time
 	})
-	if idx == 0 {
-		return ShipPosition{}
+	// didn't find anything, try to go back one
+	if startIndex == len(history) && history[startIndex-1].Time < ps.Time {
+		startIndex = startIndex - 1
+	} else if startIndex > 0 && history[startIndex].Time > ps.Time { // first is out of range try to go back one
+		startIndex = startIndex - 1
 	}
 
-	return history[idx-1]
-}
+	endIndex := sort.Search(len(history), func(i int) bool {
+		return history[i].Time > ps.Time+int(predictionTimeSeconds)
+	})
+	// all out of range
+	if startIndex == endIndex && startIndex == len(history) {
+		return nil
+	}
 
-func rewindShip(history []ShipPosition, ps PositionShip) ShipPosition {
-	ship := ShipPosition{}
-	for i := 0; i < len(history); i++ {
-		if history[i].Time > ps.Time+predictionTimeSeconds {
-			break
+	candidates := make([]ShipPosition, endIndex-startIndex)
+	// copy because they are going to be modified and there will not to many of them, at last 60(or max prediction window)
+	copy(candidates, history[startIndex:endIndex])
+	if len(candidates) == 0 {
+		return nil
+	}
+
+	// calc actual speed for all candidates if we have next position
+	// if range doesn't cover ps.Time + 60 look ahead one more position
+	// endIndex points to the first position that is greater than ps.Time + 60
+	lastIndex := endIndex
+	if endIndex != len(history) && history[endIndex-1].Time < ps.Time+int(predictionTimeSeconds) {
+		lastIndex = endIndex + 1
+	}
+
+	speedCandidates := history[startIndex:lastIndex]
+	for i := range speedCandidates {
+		if i < len(speedCandidates)-1 {
+			// Why is it needed?
+			// At time of ps.Time we might not see future positions which will tell us
+			// real trajectory of the ship
+			// e.g.
+			// time = 1, x = 0, y = 0, speed = 0,0
+			// time = 2, x = 1, y = 1, speed = 1,1
+			// time = 100 x = 100, y = 0, speed = 1,0 -- very different trajectory from the last one
+			// and out of the prediction window, which means we don't know the speed
+			// so we calculate REAL speed using future position we already know
+			candidates[i].Speed = calculateShipSpeed(float64(speedCandidates[i+1].Time-candidates[i].Time), speedCandidates[i+1].Position, candidates[i].Position)
 		}
-		ship = history[i]
 	}
 
-	return ship
+	// no matter where we start or end, rewind first ship
+	candidates[0].Position = candidates[0].Position.Add(candidates[0].Speed.ScalarMultiply(float64(ps.Time - candidates[0].Time)))
+	candidates[0].Time = ps.Time
+
+	return candidates
 }
 
 func statusForDist(minDist float64) Status {
@@ -270,13 +339,12 @@ func calculateMinDistance(s1, s2 ShipPosition, duration float64) float64 {
 
 	relSpeedSq := rVel.MagnitudeSquared()
 
-	// If relative speed is zero, distance is constant
 	if relSpeedSq < epsilon {
 		return rPos.Magnitude()
 	}
 
 	dotProduct := rPos.Dot(rVel)
-	// Time of closest approach
+	// Time of closest approach - painful math
 	tMin := -dotProduct / relSpeedSq
 
 	distAt0 := rPos.MagnitudeSquared()
