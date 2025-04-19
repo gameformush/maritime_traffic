@@ -1,0 +1,55 @@
+goos: darwin
+goarch: arm64
+pkg: maritime_traffic/pkg/traffic
+cpu: Apple M2 Pro
+=== RUN   BenchmarkPosition
+BenchmarkPosition
+=== RUN   BenchmarkPosition/name=seq/size=10
+BenchmarkPosition/name=seq/size=10
+BenchmarkPosition/name=seq/size=10-12            2875112               427.3 ns/op           242 B/op          0 allocs/op
+=== RUN   BenchmarkPosition/name=parallel/size=10
+BenchmarkPosition/name=parallel/size=10
+BenchmarkPosition/name=parallel/size=10-12       1808713               745.8 ns/op           194 B/op          0 allocs/op
+=== RUN   BenchmarkPosition/name=seq/size=100
+BenchmarkPosition/name=seq/size=100
+BenchmarkPosition/name=seq/size=100-12            575947              2622 ns/op             176 B/op          0 allocs/op
+=== RUN   BenchmarkPosition/name=parallel/size=100
+BenchmarkPosition/name=parallel/size=100
+BenchmarkPosition/name=parallel/size=100-12       542476              2812 ns/op             136 B/op          0 allocs/op
+=== RUN   BenchmarkPosition/name=seq/size=1000
+BenchmarkPosition/name=seq/size=1000
+BenchmarkPosition/name=seq/size=1000-12            66366             21906 ns/op             117 B/op          0 allocs/op
+=== RUN   BenchmarkPosition/name=parallel/size=1000
+BenchmarkPosition/name=parallel/size=1000
+BenchmarkPosition/name=parallel/size=1000-12       54241             26303 ns/op             107 B/op          0 allocs/op
+=== RUN   BenchmarkPosition/name=seq/size=10000
+BenchmarkPosition/name=seq/size=10000
+BenchmarkPosition/name=seq/size=10000-12           18292            103293 ns/op             234 B/op          0 allocs/op
+=== RUN   BenchmarkPosition/name=parallel/size=10000
+BenchmarkPosition/name=parallel/size=10000
+BenchmarkPosition/name=parallel/size=10000-12      16597            102216 ns/op             250 B/op          0 allocs/op
+=== RUN   BenchmarkPosition/name=seq/size=100000
+BenchmarkPosition/name=seq/size=100000
+BenchmarkPosition/name=seq/size=100000-12          14034            122088 ns/op             255 B/op          1 allocs/op
+=== RUN   BenchmarkPosition/name=parallel/size=100000
+BenchmarkPosition/name=parallel/size=100000
+BenchmarkPosition/name=parallel/size=100000-12             12958            116856 ns/op             275 B/op          1 allocs/op
+=== RUN   BenchmarkPosition/name=seq/size=1000000
+BenchmarkPosition/name=seq/size=1000000
+BenchmarkPosition/name=seq/size=1000000-12                 13669            117697 ns/op             270 B/op          1 allocs/op
+=== RUN   BenchmarkPosition/name=parallel/size=1000000
+BenchmarkPosition/name=parallel/size=1000000
+BenchmarkPosition/name=parallel/size=1000000-12            12633            118622 ns/op             278 B/op          1 allocs/op
+=== RUN   BenchmarkPosition/name=seq/size=10000000
+BenchmarkPosition/name=seq/size=10000000
+BenchmarkPosition/name=seq/size=10000000-12                13339            118691 ns/op             263 B/op          1 allocs/op
+=== RUN   BenchmarkPosition/name=parallel/size=10000000
+BenchmarkPosition/name=parallel/size=10000000
+BenchmarkPosition/name=parallel/size=10000000-12           12462            118358 ns/op             280 B/op          1 allocs/op
+=== RUN   BenchmarkPosition/name=seq/size=100000000
+BenchmarkPosition/name=seq/size=100000000
+BenchmarkPosition/name=seq/size=100000000-12               12759            118405 ns/op             273 B/op          1 allocs/op
+=== RUN   BenchmarkPosition/name=parallel/size=100000000
+BenchmarkPosition/name=parallel/size=100000000
+BenchmarkPosition/name=parallel/size=100000000-12          12241            119804 ns/op             286 B/op          1 allocs/op
+PASS

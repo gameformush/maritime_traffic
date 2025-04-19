@@ -12,16 +12,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type Config struct {
+	Port int `env:"PORT,default=8080"`
+}
+
 func NewServerCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "serve",
 		Short: "start a server",
 		Run:   serve,
 	}
-}
-
-type Config struct {
-	Port int `env:"PORT,default=8080"`
 }
 
 func serve(cmd *cobra.Command, args []string) {

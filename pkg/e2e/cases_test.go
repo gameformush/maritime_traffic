@@ -206,6 +206,21 @@ func TestBasicCases(t *testing.T) {
 				{Speed: 1, Status: traffic.Red},
 			},
 		},
+		{
+			name: "don't overwrite yellow with green",
+			positions: []PositionRequest{
+				{ID: "123", Time: 100, X: 0, Y: 0},
+				{ID: "345", Time: 100, X: 1, Y: 1},
+				{ID: "678", Time: 100, X: 4, Y: 4},
+				{ID: "abc", Time: 100, X: 0, Y: 1},
+			},
+			expectedResults: []traffic.PositionResult{
+				{Speed: 0, Status: traffic.Green},
+				{Speed: 0, Status: traffic.Yellow},
+				{Speed: 0, Status: traffic.Green},
+				{Speed: 0, Status: traffic.Yellow},
+			},
+		},
 	}
 
 	client := NewClient(addr, port)

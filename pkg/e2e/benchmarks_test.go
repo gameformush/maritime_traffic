@@ -9,12 +9,12 @@ import (
 
 func BenchmarkPosition(b *testing.B) {
 	client := NewClient(addr, port)
-	client.Flush()
 
 	shipsAmount := []int{1, 10, 100, 1000, 10_000, 100_000, 1_000_000}
 
 	for _, N := range shipsAmount {
 		b.Run(fmt.Sprintf("ships=%v", N), func(b *testing.B) {
+			client.Flush()
 			idsPool := IdsPool(N)
 			time := 0
 
@@ -22,7 +22,7 @@ func BenchmarkPosition(b *testing.B) {
 			b.ReportMetric(float64(N), "ships")
 			b.ResetTimer()
 
-			for range b.N {
+			for b.Loop() {
 				client.PositionShip(idsPool[rand.IntN(N)], time, handlers.Position{X: rand.Int(), Y: rand.Int()})
 				time++
 			}
@@ -32,7 +32,7 @@ func BenchmarkPosition(b *testing.B) {
 
 func IdsPool(N int) []string {
 	ids := make([]string, N)
-	for i := 0; i < N; i++ {
+	for i := range N {
 		ids[i] = RandomShipID()
 	}
 	return ids
