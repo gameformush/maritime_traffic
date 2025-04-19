@@ -259,200 +259,148 @@ func TestRewindShipEmptyHistory(t *testing.T) {
 	assert.Equal(t, 0, len(result)) // No positions should be returned
 }
 
-// EvaluateTrafficStatus tests
-
-func TestEvaluateTrafficStatusNoOtherShips(t *testing.T) {
-	traffic := NewTraffic()
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 2, Y: 4}}
-	speed := Vector{X: 1, Y: 1}
-
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Green, status, "Status should be Green when there are no other ships")
-}
-
-func TestEvaluateTrafficStatusGreenStatus(t *testing.T) {
-	traffic := NewTraffic()
-
-	// Add another ship far away
-	otherShipID := "ship2"
-	traffic.History[otherShipID] = []ShipPosition{
-		{Time: 90, Position: Vector{X: 10, Y: 10}, Speed: Vector{X: 0, Y: 0}},
+func TestEvaluateTrafficStatus(t *testing.T) {
+	tests := []struct {
+		name           string
+		history        map[string][]ShipPosition
+		positionShip   PositionShip
+		speed          Vector
+		expectedStatus Status
+	}{
+		{
+			name:           "No other ships",
+			history:        make(map[string][]ShipPosition),
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 2, Y: 4}},
+			speed:          Vector{X: 1, Y: 1},
+			expectedStatus: Green,
+		},
+		{
+			name: "Green status - ships far apart",
+			history: map[string][]ShipPosition{
+				"ship2": {
+					{Time: 90, Position: Vector{X: 10, Y: 10}, Speed: Vector{X: 0, Y: 0}},
+				},
+			},
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 2, Y: 2}},
+			speed:          Vector{X: 0, Y: 0},
+			expectedStatus: Green,
+		},
+		{
+			name: "Yellow status - ships within yellow threshold",
+			history: map[string][]ShipPosition{
+				"ship2": {
+					{Time: 100, Position: Vector{X: 1.5, Y: 0}, Speed: Vector{X: 0, Y: 0}},
+				},
+			},
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}},
+			speed:          Vector{X: 0, Y: 0},
+			expectedStatus: Yellow,
+		},
+		{
+			name: "Red status - ships very close",
+			history: map[string][]ShipPosition{
+				"ship2": {
+					{Time: 100, Position: Vector{X: 0.5, Y: 0}, Speed: Vector{X: 0, Y: 0}},
+				},
+			},
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}},
+			speed:          Vector{X: 0, Y: 0},
+			expectedStatus: Red,
+		},
+		{
+			name: "Same ship ID - should ignore itself",
+			history: map[string][]ShipPosition{
+				"ship1": {
+					{Time: 90, Position: Vector{X: 0, Y: 0}, Speed: Vector{X: 5, Y: 5}},
+				},
+			},
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 5, Y: 5}},
+			speed:          Vector{X: 0, Y: 0},
+			expectedStatus: Green,
+		},
+		{
+			name: "Future collision based on trajectories",
+			history: map[string][]ShipPosition{
+				"ship2": {
+					{Time: 100, Position: Vector{X: 10, Y: 0}, Speed: Vector{X: -1, Y: 0}},
+				},
+			},
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}},
+			speed:          Vector{X: 1, Y: 0}, // Moving right
+			expectedStatus: Red,
+		},
+		{
+			name: "Multiple ships - one causes Red status",
+			history: map[string][]ShipPosition{
+				"ship2": {
+					{Time: 100, Position: Vector{X: 1.5, Y: 0}, Speed: Vector{X: 0, Y: 0}},
+				},
+				"ship3": {
+					{Time: 100, Position: Vector{X: 0.5, Y: 0}, Speed: Vector{X: 0, Y: 0}},
+				},
+			},
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}},
+			speed:          Vector{X: 0, Y: 0},
+			expectedStatus: Red,
+		},
+		{
+			name: "Time window consideration",
+			history: map[string][]ShipPosition{
+				"ship2": {
+					{Time: 90, Position: Vector{X: 5.5, Y: 0}, Speed: Vector{X: 1, Y: 0}},
+					{Time: 110, Position: Vector{X: 25, Y: 0}, Speed: Vector{X: 1, Y: 0}},
+					{Time: 140, Position: Vector{X: 55, Y: 0}, Speed: Vector{X: 1, Y: 0}},
+				},
+			},
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 5, Y: 0}},
+			speed:          Vector{X: 0, Y: 0},
+			expectedStatus: Green,
+		},
+		{
+			name:           "Tower collision",
+			history:        make(map[string][]ShipPosition),
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}},
+			speed:          Vector{X: 0, Y: 0},
+			expectedStatus: Red,
+		},
+		{
+			name:           "Tower proximity - yellow warning",
+			history:        make(map[string][]ShipPosition),
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 1, Y: 1}},
+			speed:          Vector{X: 0, Y: 0},
+			expectedStatus: Yellow,
+		},
+		{
+			name: "Edge of time window",
+			history: map[string][]ShipPosition{
+				"ship2": {
+					{Time: 100 + predictionTimeSeconds, Position: Vector{X: 0.5, Y: 0}, Speed: Vector{X: 0, Y: 0}},
+				},
+			},
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}},
+			speed:          Vector{X: 0, Y: 0},
+			expectedStatus: Red,
+		},
+		{
+			name: "Converging paths",
+			history: map[string][]ShipPosition{
+				"ship2": {
+					{Time: 100, Position: Vector{X: 10, Y: 10}, Speed: Vector{X: -1, Y: -1}},
+				},
+			},
+			positionShip:   PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}},
+			speed:          Vector{X: 1, Y: 1},
+			expectedStatus: Red,
+		},
 	}
 
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 2, Y: 2}}
-	speed := Vector{X: 0, Y: 0}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			traffic := NewTraffic()
+			traffic.History = tt.history
 
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Green, status, "Status should be Green when ships are far apart")
-}
-
-func TestEvaluateTrafficStatusYellowStatus(t *testing.T) {
-	traffic := NewTraffic()
-
-	// Position another ship close enough for Yellow but not Red
-	otherShipID := "ship2"
-	traffic.History[otherShipID] = []ShipPosition{
-		{Time: 100, Position: Vector{X: 1.5, Y: 0}, Speed: Vector{X: 0, Y: 0}},
+			status := traffic.evaluateTrafficStatus(tt.positionShip, tt.speed)
+			assert.Equal(t, tt.expectedStatus, status, "Unexpected traffic status")
+		})
 	}
-
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}}
-	speed := Vector{X: 0, Y: 0}
-
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Yellow, status, "Status should be Yellow when ships are within YellowThreshold")
-}
-
-func TestEvaluateTrafficStatusRedStatus(t *testing.T) {
-	traffic := NewTraffic()
-
-	// Position another ship very close
-	otherShipID := "ship2"
-	traffic.History[otherShipID] = []ShipPosition{
-		{Time: 100, Position: Vector{X: 0.5, Y: 0}, Speed: Vector{X: 0, Y: 0}},
-	}
-
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}}
-	speed := Vector{X: 0, Y: 0}
-
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Red, status, "Status should be Red when ships are within RedThreshold")
-}
-
-func TestEvaluateTrafficStatusSameShipID(t *testing.T) {
-	traffic := NewTraffic()
-
-	shipID := "ship1"
-	traffic.History[shipID] = []ShipPosition{
-		{Time: 90, Position: Vector{X: 0, Y: 0}, Speed: Vector{X: 5, Y: 5}},
-	}
-
-	ps := PositionShip{ID: shipID, Time: 100, Point: Vector{X: 5, Y: 5}}
-	speed := Vector{X: 0, Y: 0}
-
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Green, status, "Status should be Green when only considering itself")
-}
-
-func TestEvaluateTrafficStatusFutureCollision(t *testing.T) {
-	traffic := NewTraffic()
-
-	// Ships will collide in the future based on their trajectories
-	otherShipID := "ship2"
-	traffic.History[otherShipID] = []ShipPosition{
-		{Time: 100, Position: Vector{X: 10, Y: 0}, Speed: Vector{X: -1, Y: 0}}, // Moving left
-	}
-
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}}
-	speed := Vector{X: 1, Y: 0} // Moving right
-	// They will meet at x=5 after 5 seconds
-
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Red, status, "Status should be Red when ships will collide in the future")
-}
-
-func TestEvaluateTrafficStatusMultipleShips(t *testing.T) {
-	traffic := NewTraffic()
-
-	// Add a ship that would cause Yellow status
-	traffic.History["ship2"] = []ShipPosition{
-		{Time: 100, Position: Vector{X: 1.5, Y: 0}, Speed: Vector{X: 0, Y: 0}},
-	}
-
-	// Add a ship that would cause Red status
-	traffic.History["ship3"] = []ShipPosition{
-		{Time: 100, Position: Vector{X: 0.5, Y: 0}, Speed: Vector{X: 0, Y: 0}},
-	}
-
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}}
-	speed := Vector{X: 0, Y: 0}
-
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Red, status, "Status should be Red when at least one ship causes Red status")
-}
-
-func TestEvaluateTrafficStatusTimeWindow(t *testing.T) {
-	traffic := NewTraffic()
-
-	otherShipID := "ship2"
-	traffic.History[otherShipID] = []ShipPosition{
-		{Time: 90, Position: Vector{X: 5.5, Y: 0}, Speed: Vector{X: 1, Y: 0}},
-		{Time: 110, Position: Vector{X: 25, Y: 0}, Speed: Vector{X: 1, Y: 0}},
-		{Time: 140, Position: Vector{X: 55, Y: 0}, Speed: Vector{X: 1, Y: 0}},
-	}
-
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 5, Y: 0}}
-	speed := Vector{X: 0, Y: 0}
-
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Green, status, "Status should consider ship positions at the evaluation time")
-}
-
-func TestEvaluateTrafficStatusTower(t *testing.T) {
-	traffic := NewTraffic()
-
-	otherShipID := "ship2"
-	traffic.History[otherShipID] = []ShipPosition{}
-
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}}
-	speed := Vector{X: 0, Y: 0}
-
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Red, status, "Hit the tower should be Red")
-}
-
-func TestEvaluateTrafficStatusTowerNear(t *testing.T) {
-	traffic := NewTraffic()
-
-	otherShipID := "ship2"
-	traffic.History[otherShipID] = []ShipPosition{}
-
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 1, Y: 1}}
-	speed := Vector{X: 0, Y: 0}
-
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Yellow, status, "Hit the tower should be Red")
-}
-
-func TestEvaluateTrafficStatusEdgeOfTimeWindow(t *testing.T) {
-	traffic := NewTraffic()
-
-	// Add a ship at the edge of the prediction window
-	traffic.History["ship2"] = []ShipPosition{
-		{Time: 100 + int(predictionTimeSeconds), Position: Vector{X: 0.5, Y: 0}, Speed: Vector{X: 0, Y: 0}},
-	}
-
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}}
-	speed := Vector{X: 0, Y: 0}
-
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Red, status, "Status should be Red when ship is at the edge of time window and within RedThreshold")
-}
-
-func TestEvaluateTrafficStatusConvergingPaths(t *testing.T) {
-	traffic := NewTraffic()
-
-	// Ships initially far apart but converging
-	traffic.History["ship2"] = []ShipPosition{
-		{Time: 100, Position: Vector{X: 10, Y: 10}, Speed: Vector{X: -1, Y: -1}},
-	}
-
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}}
-	speed := Vector{X: 1, Y: 1}
-
-	// Ships will meet somewhere in the middle
-
-	status := traffic.evaluateTrafficStatus(ps, speed)
-
-	assert.Equal(t, Red, status, "Status should be Red when ships are on converging paths")
 }
