@@ -263,7 +263,7 @@ func TestRewindShipEmptyHistory(t *testing.T) {
 
 func TestEvaluateTrafficStatusNoOtherShips(t *testing.T) {
 	traffic := NewTraffic()
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}}
+	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 2, Y: 4}}
 	speed := Vector{X: 1, Y: 1}
 
 	status := traffic.evaluateTrafficStatus(ps, speed)
@@ -280,7 +280,7 @@ func TestEvaluateTrafficStatusGreenStatus(t *testing.T) {
 		{Time: 90, Position: Vector{X: 10, Y: 10}, Speed: Vector{X: 0, Y: 0}},
 	}
 
-	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}}
+	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 2, Y: 2}}
 	speed := Vector{X: 0, Y: 0}
 
 	status := traffic.evaluateTrafficStatus(ps, speed)
@@ -327,10 +327,10 @@ func TestEvaluateTrafficStatusSameShipID(t *testing.T) {
 
 	shipID := "ship1"
 	traffic.History[shipID] = []ShipPosition{
-		{Time: 90, Position: Vector{X: 0, Y: 0}, Speed: Vector{X: 0, Y: 0}},
+		{Time: 90, Position: Vector{X: 0, Y: 0}, Speed: Vector{X: 5, Y: 5}},
 	}
 
-	ps := PositionShip{ID: shipID, Time: 100, Point: Vector{X: 0, Y: 0}}
+	ps := PositionShip{ID: shipID, Time: 100, Point: Vector{X: 5, Y: 5}}
 	speed := Vector{X: 0, Y: 0}
 
 	status := traffic.evaluateTrafficStatus(ps, speed)
@@ -380,20 +380,47 @@ func TestEvaluateTrafficStatusMultipleShips(t *testing.T) {
 func TestEvaluateTrafficStatusTimeWindow(t *testing.T) {
 	traffic := NewTraffic()
 
-	// Add a ship with multiple positions in history
 	otherShipID := "ship2"
 	traffic.History[otherShipID] = []ShipPosition{
-		{Time: 90, Position: Vector{X: 0.5, Y: 0}, Speed: Vector{X: 1, Y: 0}},
-		{Time: 110, Position: Vector{X: 20, Y: 0}, Speed: Vector{X: 1, Y: 0}},
-		{Time: 140, Position: Vector{X: 50, Y: 0}, Speed: Vector{X: 1, Y: 0}},
+		{Time: 90, Position: Vector{X: 5.5, Y: 0}, Speed: Vector{X: 1, Y: 0}},
+		{Time: 110, Position: Vector{X: 25, Y: 0}, Speed: Vector{X: 1, Y: 0}},
+		{Time: 140, Position: Vector{X: 55, Y: 0}, Speed: Vector{X: 1, Y: 0}},
 	}
+
+	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 5, Y: 0}}
+	speed := Vector{X: 0, Y: 0}
+
+	status := traffic.evaluateTrafficStatus(ps, speed)
+
+	assert.Equal(t, Green, status, "Status should consider ship positions at the evaluation time")
+}
+
+func TestEvaluateTrafficStatusTower(t *testing.T) {
+	traffic := NewTraffic()
+
+	otherShipID := "ship2"
+	traffic.History[otherShipID] = []ShipPosition{}
 
 	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 0, Y: 0}}
 	speed := Vector{X: 0, Y: 0}
 
 	status := traffic.evaluateTrafficStatus(ps, speed)
 
-	assert.Equal(t, Green, status, "Status should consider ship positions at the evaluation time")
+	assert.Equal(t, Red, status, "Hit the tower should be Red")
+}
+
+func TestEvaluateTrafficStatusTowerNear(t *testing.T) {
+	traffic := NewTraffic()
+
+	otherShipID := "ship2"
+	traffic.History[otherShipID] = []ShipPosition{}
+
+	ps := PositionShip{ID: "ship1", Time: 100, Point: Vector{X: 1, Y: 1}}
+	speed := Vector{X: 0, Y: 0}
+
+	status := traffic.evaluateTrafficStatus(ps, speed)
+
+	assert.Equal(t, Yellow, status, "Hit the tower should be Red")
 }
 
 func TestEvaluateTrafficStatusEdgeOfTimeWindow(t *testing.T) {

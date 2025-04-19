@@ -166,6 +166,8 @@ func (h *ShipsHandler) PositionShip(w http.ResponseWriter, r *http.Request) {
 		switch err {
 		case traffic.ErrTimeInPast, traffic.ErrTimeInFuture:
 			http.Error(w, err.Error(), http.StatusUnprocessableEntity)
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			sendJSON(w, map[string]string{"error": "time out of range"})
 		default:
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

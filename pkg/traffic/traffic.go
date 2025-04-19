@@ -25,37 +25,37 @@ const (
 	epsilon               = 1e-9 // For floating point comparisons
 )
 
-type ShipPosition struct {
-	Time     int
-	Position Vector
-	Speed    Vector
-}
+type (
+	ShipPosition struct {
+		Time     int
+		Position Vector
+		Speed    Vector
+	}
+	Ship struct {
+		ID           string  `json:"id"`
+		LastSeen     string  `json:"last_time"`
+		LastStatus   Status  `json:"last_status"`
+		LastSpeed    float64 `json:"last_speed"`
+		LastPosition Vector  `json:"last_position"`
+	}
 
-type Ship struct {
-	ID           string  `json:"id"`
-	LastSeen     string  `json:"last_time"`
-	LastStatus   Status  `json:"last_status"`
-	LastSpeed    float64 `json:"last_speed"`
-	LastPosition Vector  `json:"last_position"`
-}
+	PositionShip struct {
+		ID    string
+		Time  int
+		Point Vector
+	}
 
-type PositionShip struct {
-	ID    string
-	Time  int
-	Point Vector
-}
+	PositionResult struct {
+		Speed  float64
+		Status Status
+	}
 
-type PositionResult struct {
-	Speed  float64
-	Status Status
-}
-
-type Traffic struct {
-	// mu use RW mutex because we have many reads and few writes
-	mu         sync.RWMutex
-	History    map[string][]ShipPosition
-	LastStatus map[string]Status
-}
+	Traffic struct {
+		mu         sync.RWMutex
+		History    map[string][]ShipPosition
+		LastStatus map[string]Status
+	}
+)
 
 var (
 	ErrNotFound     = errors.New("ship not found")
@@ -126,11 +126,12 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 		lastPosition ShipPosition
 	)
 
-	t.mu.RLock()
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
 	if len(t.History[ps.ID]) > 0 {
 		lastPosition = t.History[ps.ID][len(t.History[ps.ID])-1]
 	}
-	t.mu.RUnlock()
 
 	if lastPosition.Time != 0 {
 		if ps.Time <= lastPosition.Time {
@@ -143,14 +144,12 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 
 	status := t.evaluateTrafficStatus(ps, speed)
 
-	t.mu.Lock()
 	t.LastStatus[ps.ID] = status
 	t.History[ps.ID] = append(t.History[ps.ID], ShipPosition{
 		Time:     ps.Time,
 		Speed:    speed,
 		Position: ps.Point,
 	})
-	t.mu.Unlock()
 
 	return PositionResult{
 		Speed:  speed.Magnitude(),
@@ -191,13 +190,8 @@ func calculateShipSpeed(deltaTime float64, newPosition, lastPosition Vector) Vec
 // 0,0 - tower
 // ships can jump surpassing max speed - try to use future position to calculate speed,
 // speed may not be correct, but at least trajectory is correct
-//
-// locks RLock on t.History
 func (t *Traffic) evaluateTrafficStatus(ps PositionShip, speed Vector) Status {
 	status := Green
-
-	t.mu.RLock()
-	defer t.mu.RUnlock()
 
 loop:
 	for shipID, history := range t.History {
@@ -248,7 +242,26 @@ loop:
 		}
 	}
 
+	towerStatus := checkTowerCollision(ps, speed)
+	if status == Green {
+		status = towerStatus
+	} else if towerStatus == Yellow && status != Red {
+		status = Yellow
+	}
+
 	return status
+}
+
+func checkTowerCollision(ps PositionShip, speed Vector) Status {
+	minDist := calculateMinDistance(ShipPosition{
+		Position: Vector{X: 0, Y: 0},
+		Speed:    Vector{X: 0, Y: 0},
+	}, ShipPosition{
+		Position: ps.Point,
+		Speed:    speed,
+	}, predictionTimeSeconds)
+
+	return statusForDist(minDist)
 }
 
 // find time box starting at ps.Time and ending at ps.Time + 60

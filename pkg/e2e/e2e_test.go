@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"testing"
+	"time"
 )
 
 const port = 7070
@@ -32,6 +33,9 @@ func TestMain(m *testing.M) {
 			}
 		}
 	}()
+
+	// Give the server a moment to start
+	time.Sleep(1 * time.Second)
 
 	exitCode := m.Run()
 
