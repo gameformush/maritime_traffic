@@ -18,8 +18,8 @@ const (
 
 	maxSpeedPerSecond = 100.0 // Maximum speed of a ship in units per second
 
-	YellowThreshold = 1.0 // Distance threshold for yellow status
-	RedThreshold    = 0   // Distance threshold for red status
+	YellowThreshold = 2 // Distance threshold for yellow status
+	RedThreshold    = 1 // Distance threshold for red status
 
 	predictionTimeSeconds = 60.0
 	epsilon               = 1e-9 // For floating point comparisons
@@ -143,9 +143,14 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 			X: float64(deltaX) / deltaTime,
 			Y: float64(deltaY) / deltaTime,
 		}
+
+		// truncate speed to maxSpeedPerSecond
+		if speed.Magnitude() > maxSpeedPerSecond {
+			speed = speed.Normalize().ScalarMultiply(maxSpeedPerSecond)
+		}
 	}
 
-	status := evaluateTrafficStatus(t, ps, speed)
+	status := t.evaluateTrafficStatus(ps, speed)
 
 	t.mu.Lock()
 	t.LastStatus[ps.ID] = status
@@ -175,7 +180,7 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 // 0,0 - tower TODO
 //
 // locks RLock on t.Histor
-func evaluateTrafficStatus(t *Traffic, ps PositionShip, speed Vector) Status {
+func (t *Traffic) evaluateTrafficStatus(ps PositionShip, speed Vector) Status {
 	status := Green
 
 	t.mu.RLock()
@@ -195,7 +200,7 @@ func evaluateTrafficStatus(t *Traffic, ps PositionShip, speed Vector) Status {
 		if otherShip.Time < ps.Time { // estimate position at ps.Time
 			currentPosition = otherShip.Position.Add(otherShip.Speed.ScalarMultiply(float64(ps.Time - otherShip.Time)))
 		}
-		if currentPosition.Subtract(ps.Point).Magnitude() > maxSpeedPerSecond*predictionTimeSeconds*2 {
+		if currentPosition.Subtract(ps.Point).Magnitude() > maxSpeedPerSecond*predictionTimeSeconds*2+YellowThreshold {
 			continue // no way to be close
 		}
 
@@ -245,10 +250,10 @@ func rewindShip(history []ShipPosition, ps PositionShip) ShipPosition {
 }
 
 func statusForDist(minDist float64) Status {
-	if minDist < 1 {
+	if minDist < RedThreshold {
 		return Red
 	}
-	if minDist < 2 {
+	if minDist < YellowThreshold {
 		return Yellow
 	}
 

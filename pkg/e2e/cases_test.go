@@ -221,6 +221,37 @@ func TestCollision(t *testing.T) {
 				{Speed: 0, Status: traffic.Yellow},
 			},
 		},
+		// if first position with speed zero but second is far in future I will miss it - case
+		{
+			name: "use actual data for speed if available",
+			positions: []PositionRequest{
+				{ID: "123", Time: 100, X: 0, Y: 0},
+				{ID: "123", Time: 101, X: 1, Y: 1},   // at this point we think speed is 1 and movement will be 2,2 -> 3,3 etc
+				{ID: "123", Time: 170, X: 600, Y: 0}, // but in 1eality it is 8,0 -> 9,0 etc
+				{ID: "345", Time: 102, X: 2, Y: 2},   // must not be red
+			},
+			expectedResults: []handlers.PositionShipResponse{
+				{Speed: 0, Status: traffic.Green},
+				{Speed: 1, Status: traffic.Green},
+				{Speed: 8, Status: traffic.Green},
+				{Speed: 0, Status: traffic.Green},
+			},
+		},
+		{
+			name: "far far away in a distant galaxy...",
+			positions: []PositionRequest{
+				{ID: "123", Time: 100, X: 6_101, Y: 0},
+				{ID: "345", Time: 100, X: -6_100, Y: 0},
+				{ID: "123", Time: 101, X: 6_001, Y: 0},  // Moving left
+				{ID: "345", Time: 101, X: -6_000, Y: 0}, // Moving right
+			},
+			expectedResults: []handlers.PositionShipResponse{
+				{Speed: 0, Status: traffic.Green},
+				{Speed: 0, Status: traffic.Green},
+				{Speed: 100, Status: traffic.Green},
+				{Speed: 100, Status: traffic.Yellow},
+			},
+		},
 	}
 
 	client := NewClient(addr, port)

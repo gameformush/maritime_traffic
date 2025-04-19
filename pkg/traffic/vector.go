@@ -7,6 +7,18 @@ type Vector struct {
 	Y float64
 }
 
+func (v Vector) Normalize() Vector {
+	magnitude := v.Magnitude()
+	if magnitude == 0 {
+		return Vector{0, 0}
+	}
+
+	return Vector{
+		X: v.X / magnitude,
+		Y: v.Y / magnitude,
+	}
+}
+
 func (v Vector) Magnitude() float64 {
 	return math.Sqrt(v.X*v.X + v.Y*v.Y)
 }
