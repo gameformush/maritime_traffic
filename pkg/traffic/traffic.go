@@ -120,12 +120,18 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 		return PositionResult{}, ErrTimeInFuture
 	}
 
-	t.mu.Lock()
-	defer t.mu.Unlock()
+	var (
+		speed        Vector
+		lastPosition ShipPosition
+	)
 
-	speed := Vector{}
+	t.mu.RLock()
 	if len(t.History[ps.ID]) > 0 {
-		lastPosition := t.History[ps.ID][len(t.History[ps.ID])-1]
+		lastPosition = t.History[ps.ID][len(t.History[ps.ID])-1]
+	}
+	t.mu.RUnlock()
+
+	if lastPosition.Time != 0 {
 		if ps.Time <= lastPosition.Time {
 			return PositionResult{}, ErrTimeInPast
 		}
@@ -139,18 +145,41 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 		}
 	}
 
-	status := Green
-	// go over all ships
-	// find ship states before ps.Time + 60
-	// calculate ship position at ps.Time
-	// calculate distance between the two ships
-	// if distance > 60 * maxSpeed * 2 then skip they are too far
-	// otherwise calculate min distance
-	// if status red then break, not going to get better
-	// if status yellow then set status yellow
+	status := evaluateTrafficStatus(t, ps, speed)
 
-	// edge cases:
-	// 0,0 - tower TODO
+	t.mu.Lock()
+	t.LastStatus[ps.ID] = status
+	t.History[ps.ID] = append(t.History[ps.ID], ShipPosition{
+		Time:     ps.Time,
+		Speed:    speed,
+		Position: ps.Point,
+	})
+	t.mu.Unlock()
+
+	return PositionResult{
+		Speed:  speed.Magnitude(),
+		Status: status,
+	}, nil
+}
+
+// evaluateTrafficStatus goes over all ships
+// find ship states before ps.Time + 60
+// calculate ship position at ps.Time
+// calculate distance between the two ships
+// if distance > 60 * maxSpeed * 2 then skip they are too far
+// otherwise calculate min distance
+// if status red then break, not going to get better
+// if status yellow then set status yellow
+//
+// edge cases:
+// 0,0 - tower TODO
+//
+// locks RLock on t.Histor
+func evaluateTrafficStatus(t *Traffic, ps PositionShip, speed Vector) Status {
+	status := Green
+
+	t.mu.RLock()
+	defer t.mu.RUnlock()
 
 	for shipID, history := range t.History {
 		if shipID == ps.ID {
@@ -164,7 +193,7 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 
 		currentPosition := otherShip.Position
 		if otherShip.Time < ps.Time { // estimate position at ps.Time
-			currentPosition = otherShip.Position.Add(otherShip.Speed.ScalarMultiply(float64(ps.Time)))
+			currentPosition = otherShip.Position.Add(otherShip.Speed.ScalarMultiply(float64(ps.Time - otherShip.Time)))
 		}
 		if currentPosition.Subtract(ps.Point).Magnitude() > maxSpeedPerSecond*predictionTimeSeconds*2 {
 			continue // no way to be close
@@ -189,17 +218,7 @@ func (t *Traffic) PositionShip(ps PositionShip) (PositionResult, error) {
 		}
 	}
 
-	t.LastStatus[ps.ID] = status
-	t.History[ps.ID] = append(t.History[ps.ID], ShipPosition{
-		Time:     ps.Time,
-		Speed:    speed,
-		Position: ps.Point,
-	})
-
-	return PositionResult{
-		Speed:  speed.Magnitude(),
-		Status: status,
-	}, nil
+	return status
 }
 
 func rewindShipBinarySearch(history []ShipPosition, ps PositionShip) ShipPosition {
@@ -229,7 +248,7 @@ func statusForDist(minDist float64) Status {
 	if minDist < 1 {
 		return Red
 	}
-	if minDist <= 2 {
+	if minDist < 2 {
 		return Yellow
 	}
 

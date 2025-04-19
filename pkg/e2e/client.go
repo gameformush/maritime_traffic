@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"maritime_traffic/pkg/handlers"
-	"maritime_traffic/pkg/traffic"
 	"net/http"
 )
 
@@ -33,7 +32,7 @@ func (c *Client) Flush() error {
 	return nil
 }
 
-func (c *Client) GetShips() ([]traffic.Ship, error) {
+func (c *Client) GetShips() ([]handlers.ShipResponse, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/api/v1/ships", c.Address))
 	if err != nil {
 		return nil, err
@@ -44,7 +43,7 @@ func (c *Client) GetShips() ([]traffic.Ship, error) {
 		return nil, fmt.Errorf("failed to get ships: %s", resp.Status)
 	}
 
-	var ships []traffic.Ship
+	var ships []handlers.ShipResponse
 	if err := json.NewDecoder(resp.Body).Decode(&ships); err != nil {
 		return nil, err
 	}
@@ -52,47 +51,47 @@ func (c *Client) GetShips() ([]traffic.Ship, error) {
 	return ships, nil
 }
 
-func (c *Client) GetShip(id string) (traffic.Ship, error) {
+func (c *Client) GetShip(id string) (handlers.GetShipResponse, error) {
 	resp, err := http.Get(fmt.Sprintf("%s/api/v1/ships/%s", c.Address, id))
 	if err != nil {
-		return traffic.Ship{}, err
+		return handlers.GetShipResponse{}, err
 	}
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return traffic.Ship{}, fmt.Errorf("failed to get ship: %s", resp.Status)
+		return handlers.GetShipResponse{}, fmt.Errorf("failed to get ship: %s", resp.Status)
 	}
 
-	var ship traffic.Ship
+	var ship handlers.GetShipResponse
 	if err := json.NewDecoder(resp.Body).Decode(&ship); err != nil {
-		return traffic.Ship{}, err
+		return handlers.GetShipResponse{}, err
 	}
 
 	return ship, nil
 }
 
-func (c *Client) PositionShip(id string, time int, position handlers.Position) (traffic.PositionResult, error) {
+func (c *Client) PositionShip(id string, time int, position handlers.Position) (handlers.PositionShipResponse, error) {
 	reqBody, err := json.Marshal(handlers.PositionShipRequest{
 		Time: time,
 		X:    position.X,
 		Y:    position.Y,
 	})
 	if err != nil {
-		return traffic.PositionResult{}, err
+		return handlers.PositionShipResponse{}, err
 	}
 
 	resp, err := http.Post(fmt.Sprintf("%s/api/v1/ships/%s/position", c.Address, id), "application/json", bytes.NewReader(reqBody))
 	if err != nil {
-		return traffic.PositionResult{}, err
+		return handlers.PositionShipResponse{}, err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusCreated {
-		return traffic.PositionResult{}, fmt.Errorf("failed to position ship: %s", resp.Status)
+		return handlers.PositionShipResponse{}, fmt.Errorf("failed to position ship: %s", resp.Status)
 	}
 
-	var result traffic.PositionResult
+	var result handlers.PositionShipResponse
 	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return traffic.PositionResult{}, err
+		return handlers.PositionShipResponse{}, err
 	}
 
 	return result, nil

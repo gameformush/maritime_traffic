@@ -26,7 +26,7 @@ type (
 		ID           string   `json:"id"`
 		LastSeen     string   `json:"last_time"`
 		LastStatus   string   `json:"last_status"`
-		LastSpeed    float64  `json:"last_speed"`
+		LastSpeed    int      `json:"last_speed"`
 		LastPosition Position `json:"last_position"`
 	}
 	PositionShipRequest struct {
@@ -86,7 +86,7 @@ func mapShips(ships []traffic.Ship) []ShipResponse {
 			ID:           ship.ID,
 			LastSeen:     ship.LastSeen,
 			LastStatus:   string(ship.LastStatus),
-			LastSpeed:    ship.LastSpeed,
+			LastSpeed:    int(ship.LastSpeed),
 			LastPosition: Position{X: int(ship.LastPosition.X), Y: int(ship.LastPosition.Y)},
 		}
 	}

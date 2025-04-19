@@ -10,23 +10,21 @@ import (
 func generateHistory(size int) []ShipPosition {
 	history := make([]ShipPosition, size)
 	baseTime := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC).Unix()
-	for i := 0; i < size; i++ {
-		history[i] = ShipPosition{Time: int(baseTime + int64(i*10))} // e.g., 10-second intervals
+	for i := range size {
+		history[i] = ShipPosition{Time: int(baseTime + int64(i*10))}
 	}
 	return history
 }
 
-// Generic benchmark runner for different sizes and functions
 func benchmarkRewindFunc(b *testing.B, size int, rewindFunc func([]ShipPosition, PositionShip) ShipPosition) {
 	history := generateHistory(size)
-	ps := PositionShip{Time: history[size/2].Time - predictionTimeSeconds/2} // A time within the prediction window of the middle element
+	ps := PositionShip{Time: history[size/2].Time - predictionTimeSeconds/2}
 
 	for b.Loop() {
 		_ = rewindFunc(history, ps)
 	}
 }
 
-// Benchmark for rewindShipBinary
 func BenchmarkRewind(b *testing.B) {
 	sizes := []int{10, 100, 1000, 10000, 100_000, 1_000_000, 10_000_000, 100_000_000}
 	for _, size := range sizes {
@@ -93,7 +91,7 @@ func BenchmarkPosition(b *testing.B) {
 
 func IdsPool(N int) []string {
 	ids := make([]string, N)
-	for i := 0; i < N; i++ {
+	for i := range N {
 		ids[i] = RandomShipID()
 	}
 	return ids
