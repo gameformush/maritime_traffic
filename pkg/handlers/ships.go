@@ -12,7 +12,14 @@ import (
 
 const muxIDVar = "id"
 
+const (
+	Green  Status = "green"
+	Yellow Status = "yellow"
+	Red    Status = "red"
+)
+
 type (
+	Status string
 	IShips interface {
 		GetShips() ([]traffic.Ship, error)
 		GetShipPositions(id string) ([]traffic.ShipPosition, error)
@@ -25,7 +32,7 @@ type (
 	ShipResponse struct {
 		ID           string   `json:"id"`
 		LastSeen     string   `json:"last_time"`
-		LastStatus   string   `json:"last_status"`
+		LastStatus   Status   `json:"last_status"`
 		LastSpeed    int      `json:"last_speed"`
 		LastPosition Position `json:"last_position"`
 	}
@@ -35,11 +42,11 @@ type (
 		Y    int `json:"y"`
 	}
 	PositionShipResponse struct {
-		Time   int            `json:"time"`
-		X      int            `json:"x"`
-		Y      int            `json:"y"`
-		Speed  int            `json:"speed"`
-		Status traffic.Status `json:"status"`
+		Time   int    `json:"time"`
+		X      int    `json:"x"`
+		Y      int    `json:"y"`
+		Speed  int    `json:"speed"`
+		Status Status `json:"status"`
 	}
 	Position struct {
 		X int `json:"x"`
@@ -85,7 +92,7 @@ func mapShips(ships []traffic.Ship) []ShipResponse {
 		result[i] = ShipResponse{
 			ID:           ship.ID,
 			LastSeen:     ship.LastSeen,
-			LastStatus:   string(ship.LastStatus),
+			LastStatus:   mapStatus(ship.LastStatus),
 			LastSpeed:    int(ship.LastSpeed),
 			LastPosition: Position{X: int(ship.LastPosition.X), Y: int(ship.LastPosition.Y)},
 		}
@@ -180,8 +187,22 @@ func (h *ShipsHandler) PositionShip(w http.ResponseWriter, r *http.Request) {
 		X:      req.X,
 		Y:      req.Y,
 		Speed:  int(result.Speed),
-		Status: result.Status,
+		Status: mapStatus(result.Status),
 	})
+}
+
+func mapStatus(status traffic.Status) Status {
+	switch status {
+	case traffic.Green:
+		return Green
+	case traffic.Yellow:
+		return Yellow
+	case traffic.Red:
+		return Red
+	default:
+		slog.Error("unknown status", "status", status)
+		return Green
+	}
 }
 
 func (p PositionShipRequest) Validate() error {

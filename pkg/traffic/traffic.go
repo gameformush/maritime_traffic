@@ -9,13 +9,15 @@ import (
 	"time"
 )
 
-type Status string
+type Status int
 
 const (
-	Green  Status = "green"
-	Yellow Status = "yellow"
-	Red    Status = "red"
+	Green Status = iota
+	Yellow
+	Red
+)
 
+const (
 	maxSpeedPerSecond = 100.0 // Maximum speed of a ship in units per second
 
 	YellowThreshold = 2 // Distance threshold for yellow status
@@ -265,7 +267,7 @@ func checkTowerCollision(ps PositionShip, speed Vector) Status {
 }
 
 // find time box starting at ps.Time and ending at ps.Time + 60
-// maybe second search for the end could be linear? - depense on density of updates
+// maybe second search for the end could be linear? - depends on density of updates
 // with small density for next 60 seconds second linear search will be very fast
 // however I don't want to make assumptions about the density of updates
 // so we will use binary search for both

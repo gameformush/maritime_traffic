@@ -147,7 +147,6 @@ func TestRewindShipStillShips(t *testing.T) {
 }
 
 func TestRewindShipPositionAdjustment(t *testing.T) {
-	// Test that first and last positions are properly adjusted
 	history := []ShipPosition{
 		{Time: 90, Position: Vector{X: 0, Y: 0}, Speed: Vector{X: 1, Y: 1}},
 		{Time: 110, Position: Vector{X: 20, Y: 20}, Speed: Vector{X: 1, Y: 1}},
@@ -157,7 +156,6 @@ func TestRewindShipPositionAdjustment(t *testing.T) {
 
 	result := rewindShipBinarySearch(history, ps)
 
-	// Check first position is rewound to ps.Time
 	assert.Equal(t, 100, result[0].Time)
 	assert.Equal(t, Vector{X: 10, Y: 10}, result[0].Position) // 0,0 + (1,1) * 10
 	assert.Equal(t, 140, result[len(result)-1].Time)
@@ -165,7 +163,6 @@ func TestRewindShipPositionAdjustment(t *testing.T) {
 }
 
 func TestRewindShipSinglePosition(t *testing.T) {
-	// Test with a single position in history
 	history := []ShipPosition{
 		{Time: 90, Position: Vector{X: 0, Y: 0}, Speed: Vector{X: 1, Y: 1}},
 	}
@@ -179,7 +176,6 @@ func TestRewindShipSinglePosition(t *testing.T) {
 }
 
 func TestRewindShipExactBoundaries(t *testing.T) {
-	// Test with positions exactly at boundaries
 	history := []ShipPosition{
 		{Time: 100, Position: Vector{X: 0, Y: 0}, Speed: Vector{X: 1, Y: 1}},
 		{Time: 160, Position: Vector{X: 60, Y: 60}, Speed: Vector{X: 1, Y: 1}},
@@ -197,7 +193,6 @@ func TestRewindShipExactBoundaries(t *testing.T) {
 }
 
 func TestRewindShipComplexScenario(t *testing.T) {
-	// More complex scenario with varying speeds and times
 	history := []ShipPosition{
 		{Time: 80, Position: Vector{X: 0, Y: 0}, Speed: Vector{X: 2, Y: 1}},
 		{Time: 95, Position: Vector{X: 30, Y: 15}, Speed: Vector{X: 2, Y: 1}},

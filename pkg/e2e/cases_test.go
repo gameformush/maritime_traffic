@@ -2,7 +2,6 @@ package e2e
 
 import (
 	"maritime_traffic/pkg/handlers"
-	"maritime_traffic/pkg/traffic"
 	"sort"
 	"testing"
 
@@ -26,7 +25,7 @@ func TestCollision(t *testing.T) {
 		{
 			name:            "happy path",
 			positions:       []PositionRequest{{ID: "123", Time: 123, X: 2, Y: 2}},
-			expectedResults: []handlers.PositionShipResponse{{Speed: 0, Status: traffic.Green}},
+			expectedResults: []handlers.PositionShipResponse{{Speed: 0, Status: handlers.Green}},
 		},
 		{
 			name: "two positions",
@@ -35,8 +34,8 @@ func TestCollision(t *testing.T) {
 				{ID: "123", Time: 124, X: 3, Y: 3},
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 1, Status: traffic.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 1, Status: handlers.Green},
 			},
 		},
 		{
@@ -46,8 +45,8 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 124, X: 3, Y: 3},
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Yellow},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Yellow},
 			},
 		},
 		{
@@ -57,8 +56,8 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 124, X: 2, Y: 2},
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Red},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Red},
 			},
 		},
 		{
@@ -68,8 +67,8 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 124, X: 3, Y: 3},
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Green},
 			},
 		},
 		{
@@ -81,10 +80,10 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 124, X: 4, Y: 1},
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Yellow},
-				{Speed: 1, Status: traffic.Yellow},
-				{Speed: 1, Status: traffic.Yellow},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Yellow},
+				{Speed: 1, Status: handlers.Yellow},
+				{Speed: 1, Status: handlers.Yellow},
 			},
 		},
 		{
@@ -96,10 +95,10 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 101, X: 9, Y: 0}, // Moving left
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 1, Status: traffic.Red},
-				{Speed: 1, Status: traffic.Red},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 1, Status: handlers.Red},
+				{Speed: 1, Status: handlers.Red},
 			},
 		},
 		{
@@ -111,10 +110,10 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 101, X: 8, Y: 1}, // Moving left but offset
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 2, Status: traffic.Yellow},
-				{Speed: 2, Status: traffic.Yellow},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 2, Status: handlers.Yellow},
+				{Speed: 2, Status: handlers.Yellow},
 			},
 		},
 		{
@@ -127,11 +126,11 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 110, X: 7, Y: 7},  // Will reach (5,5) later
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 1, Status: traffic.Green},
-				{Speed: 1, Status: traffic.Green},
-				{Speed: 1, Status: traffic.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 1, Status: handlers.Green},
+				{Speed: 1, Status: handlers.Green},
+				{Speed: 1, Status: handlers.Green},
 			},
 		},
 		{
@@ -143,10 +142,10 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 101, X: 8, Y: 2}, // Moving south
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 1, Status: traffic.Green},
-				{Speed: 1, Status: traffic.Red},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 1, Status: handlers.Green},
+				{Speed: 1, Status: handlers.Red},
 			},
 		},
 		{
@@ -158,10 +157,10 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 101, X: 90, Y: 0}, // Fast moving left
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 20, Status: traffic.Red},
-				{Speed: 20, Status: traffic.Red},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 20, Status: handlers.Red},
+				{Speed: 20, Status: handlers.Red},
 			},
 		},
 		{
@@ -175,12 +174,12 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 102, X: 5, Y: 5}, // Now passed each other
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 1, Status: traffic.Red},
-				{Speed: 1, Status: traffic.Red},
-				{Speed: 3, Status: traffic.Green},
-				{Speed: 3, Status: traffic.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 1, Status: handlers.Red},
+				{Speed: 1, Status: handlers.Red},
+				{Speed: 3, Status: handlers.Green},
+				{Speed: 3, Status: handlers.Green},
 			},
 		},
 		{
@@ -194,12 +193,12 @@ func TestCollision(t *testing.T) {
 				{ID: "678", Time: 102, X: 7, Y: 5}, // Moving down
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 1, Status: traffic.Red},
-				{Speed: 1, Status: traffic.Red},
-				{Speed: 1, Status: traffic.Red},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 1, Status: handlers.Red},
+				{Speed: 1, Status: handlers.Red},
+				{Speed: 1, Status: handlers.Red},
 			},
 		},
 		{
@@ -211,10 +210,10 @@ func TestCollision(t *testing.T) {
 				{ID: "abc", Time: 100, X: 2, Y: 3},
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Yellow},
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Yellow},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Yellow},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Yellow},
 			},
 		},
 		{
@@ -226,10 +225,10 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 102, X: 7, Y: 7},   // must not be red
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 1, Status: traffic.Green},
-				{Speed: 8, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 1, Status: handlers.Green},
+				{Speed: 8, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Green},
 			},
 		},
 		{
@@ -241,10 +240,10 @@ func TestCollision(t *testing.T) {
 				{ID: "345", Time: 101, X: -6_000, Y: 10}, // Moving right
 			},
 			expectedResults: []handlers.PositionShipResponse{
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 0, Status: traffic.Green},
-				{Speed: 100, Status: traffic.Green},
-				{Speed: 100, Status: traffic.Yellow},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 0, Status: handlers.Green},
+				{Speed: 100, Status: handlers.Green},
+				{Speed: 100, Status: handlers.Yellow},
 			},
 		},
 	}
@@ -282,7 +281,7 @@ func TestBasic(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 0, res.Speed)
-	assert.Equal(t, traffic.Green, res.Status)
+	assert.Equal(t, handlers.Green, res.Status)
 
 	res, err = client.PositionShip("123", 124, handlers.Position{
 		X: 3,
@@ -290,7 +289,7 @@ func TestBasic(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 1, res.Speed)
-	assert.Equal(t, traffic.Green, res.Status)
+	assert.Equal(t, handlers.Green, res.Status)
 
 	res, err = client.PositionShip("345", 125, handlers.Position{
 		X: 4,
@@ -298,7 +297,7 @@ func TestBasic(t *testing.T) {
 	})
 	require.NoError(t, err)
 	assert.Equal(t, 0, res.Speed)
-	assert.Equal(t, traffic.Red, res.Status)
+	assert.Equal(t, handlers.Red, res.Status)
 
 	ships, err := client.GetShips()
 	require.NoError(t, err)
