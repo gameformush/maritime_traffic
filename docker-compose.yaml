@@ -1,6 +1,13 @@
 services:
-  web:
+  web-jjnouxmwqg:
     build: .
+    image: traffic_web_jjnouxmwqg_6ekajl27uu
     ports:
       - "8080:8080"
     command: /bin/traffic serve
+  
+  test-ajnauxrwqb:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    image: traffic_test_jfnoubmwag_6ek7jl471u
