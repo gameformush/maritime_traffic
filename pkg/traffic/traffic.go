@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-type Status int
+type Status int8
 
 const (
 	Green Status = iota

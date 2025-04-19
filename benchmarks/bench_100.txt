@@ -6,23 +6,23 @@ cpu: Apple M2 Pro
 BenchmarkPosition
 === RUN   BenchmarkPosition/ships=1
 BenchmarkPosition/ships=1
-BenchmarkPosition/ships=1-12                 176           6798128 ns/op         1083944 B/op      11329 allocs/op
+BenchmarkPosition/ships=1-12               20475             57126 ns/op           11595 B/op        126 allocs/op
 === RUN   BenchmarkPosition/ships=10
 BenchmarkPosition/ships=10
-BenchmarkPosition/ships=10-12                150          10613407 ns/op         1056624 B/op      11318 allocs/op
+BenchmarkPosition/ships=10-12              20863             57143 ns/op           11998 B/op        135 allocs/op
 === RUN   BenchmarkPosition/ships=100
 BenchmarkPosition/ships=100
-BenchmarkPosition/ships=100-12               120          11770856 ns/op         1043724 B/op      11319 allocs/op
+BenchmarkPosition/ships=100-12             17844             66418 ns/op           16582 B/op        224 allocs/op
 === RUN   BenchmarkPosition/ships=1000
 BenchmarkPosition/ships=1000
-BenchmarkPosition/ships=1000-12              100          13951182 ns/op         1040243 B/op      11357 allocs/op
+BenchmarkPosition/ships=1000-12            10000            116272 ns/op           57329 B/op       1029 allocs/op
 === RUN   BenchmarkPosition/ships=10000
 BenchmarkPosition/ships=10000
-BenchmarkPosition/ships=10000-12             100          21977295 ns/op         1061529 B/op      11428 allocs/op
+BenchmarkPosition/ships=10000-12           10000            296385 ns/op          199591 B/op       3809 allocs/op
 === RUN   BenchmarkPosition/ships=100000
 BenchmarkPosition/ships=100000
-BenchmarkPosition/ships=100000-12             51          31843325 ns/op         1044693 B/op      11448 allocs/op
+BenchmarkPosition/ships=100000-12          10000            316395 ns/op          249436 B/op       4937 allocs/op
 === RUN   BenchmarkPosition/ships=1000000
 BenchmarkPosition/ships=1000000
-BenchmarkPosition/ships=1000000-12            40          43737921 ns/op         1115942 B/op      11508 allocs/op
+BenchmarkPosition/ships=1000000-12         10000            294344 ns/op          251070 B/op       5088 allocs/op
 PASS
